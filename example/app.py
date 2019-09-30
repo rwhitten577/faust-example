@@ -3,6 +3,7 @@ import logging.config
 import os
 
 import faust
+from avro import schema
 from faust.serializers import codecs
 
 from example import SETTINGS
@@ -23,16 +24,16 @@ source_topic = app.topic(CONFIG.source_topic, value_serializer="FaustAvroSeriali
 out_topic = app.topic(CONFIG.output_topic, value_serializer="FaustAvroSerializer", key_serializer="FaustAvroKeySerializer")
 
 schema_registry_client = CachedSchemaRegistryClient(url=SCHEMA_REGISTRY_URL)
-out_schema = parse_schema_descriptor(CONFIG.output_value_schema)
-out_key_schema = parse_schema_descriptor(CONFIG.output_key_schema)
+out_schema = schema.Parse(CONFIG.output_value_schema)
+out_key_schema = schema.Parse(CONFIG.output_key_schema)
 
 codecs.register("FaustAvroSerializer", FaustAvroSerializer(schema_registry_client=schema_registry_client,
                                                            destination_topic=out_topic.topics[0],
-                                                           schema=out_schema.schema))
+                                                           schema=out_schema))
 
 codecs.register("FaustAvroKeySerializer", FaustAvroSerializer(schema_registry_client=schema_registry_client,
                                                               destination_topic=out_topic.topics[0],
-                                                              schema=out_key_schema.schema,
+                                                              schema=out_key_schema,
                                                               is_key=True))
 
 
